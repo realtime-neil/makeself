@@ -1,7 +1,15 @@
 # makeself/Dockerfile
 
 FROM alpine
-LABEL maintainer="nroza@rethinkrobotics.com"
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VCS_URL
+LABEL \
+  org.label-schema.schema-version="1.0" \
+  org.label-schema.build-date="${BUILD_DATE}" \
+  org.label-schema.vcs-ref="${VCS_REF}" \
+  org.label-schema.vcs-url="${VCS_URL}" \
+  maintainer="nroza@rethinkrobotics.com"
 WORKDIR /tmp
 RUN apk --update add xz
 COPY . .
