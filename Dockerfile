@@ -9,7 +9,7 @@ LABEL \
   org.label-schema.build-date="${BUILD_DATE}" \
   org.label-schema.vcs-ref="${VCS_REF}" \
   org.label-schema.vcs-url="${VCS_URL}" \
-  maintainer="nroza@rethinkrobotics.com"
+  maintainer="neil@rtr.ai"
 WORKDIR /tmp
 RUN apk --update add xz
 COPY . .
