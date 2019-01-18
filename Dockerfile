@@ -11,5 +11,5 @@ LABEL \
   org.label-schema.vcs-url="${VCS_URL}" \
   maintainer="neil@rtr.ai"
 WORKDIR /tmp
-RUN apk --update add xz
+RUN apk --update add tar xz
 COPY . .
