@@ -1,23 +1,51 @@
 #!/bin/bash
 
+set -eu
+
 THIS="$(realpath "$0")"
 HERE="$(dirname "${THIS}")"
 SUT="$(dirname "${HERE}")/makeself.sh"
 
-testWhiteSpace() {
-    local archive_dir="$(mktemp -dt archive_dir.XXXXXX)"
-    (
-        cd "${archive_dir}"
-        touch "$(printf "_\x09_character_tabulation.txt")"
-        touch "$(printf "_\x0b_line_tabulation.txt")"
-        touch "$(printf "_\x0c_form_feed.txt")"
-        touch "$(printf "_\x0d_carriage_return.txt")"
-        touch "$(printf "_\x20_space:.txt")"
-    )
-    local file_name="$(mktemp -t file_name.XXXXXX)"
-    "${SUT}" "${archive_dir}" "${file_name}" "white space test" "ls -lah ."
+testWhiteSpace() (
+    cd "$(mktemp -d)"
+    mkdir -p ./archive.d
+    #touch "./archive.d/$(printf '_\x00_nul')"
+    touch "./archive.d/$(printf '_\x01_soh')"
+    touch "./archive.d/$(printf '_\x02_stx')"
+    touch "./archive.d/$(printf '_\x03_etx')"
+    touch "./archive.d/$(printf '_\x04_eot')"
+    touch "./archive.d/$(printf '_\x05_enq')"
+    touch "./archive.d/$(printf '_\x06_ack')"
+    touch "./archive.d/$(printf '_\x07_bel')"
+    touch "./archive.d/$(printf '_\x08_bs')"
+    touch "./archive.d/$(printf '_\x09_ht')"
+    #touch "./archive.d/$(printf '_\x0a_lf')"
+    touch "./archive.d/$(printf '_\x0b_vt')"
+    touch "./archive.d/$(printf '_\x0c_ff')"
+    touch "./archive.d/$(printf '_\x0d_cr')"
+    touch "./archive.d/$(printf '_\x0e_so')"
+    touch "./archive.d/$(printf '_\x0f_si')"
+    touch "./archive.d/$(printf '_\x10_dle')"
+    touch "./archive.d/$(printf '_\x11_dc1')"
+    touch "./archive.d/$(printf '_\x12_dc2')"
+    touch "./archive.d/$(printf '_\x13_dc3')"
+    touch "./archive.d/$(printf '_\x14_dc4')"
+    touch "./archive.d/$(printf '_\x15_nak')"
+    touch "./archive.d/$(printf '_\x16_syn')"
+    touch "./archive.d/$(printf '_\x17_etb')"
+    touch "./archive.d/$(printf '_\x18_can')"
+    touch "./archive.d/$(printf '_\x19_em')"
+    touch "./archive.d/$(printf '_\x1a_sub')"
+    touch "./archive.d/$(printf '_\x1b_esc')"
+    touch "./archive.d/$(printf '_\x1c_fs')"
+    touch "./archive.d/$(printf '_\x1d_gs')"
+    touch "./archive.d/$(printf '_\x1e_rs')"
+    touch "./archive.d/$(printf '_\x1f_us')"
+    touch "./archive.d/$(printf '_\x20_sp')"
+    "${SUT}" ./archive.d ./archive.run "Archive" ls -lah
     assertEqual $? 0
-    rm -rf "${archive_dir}" "${file_name}"
-}
+    ./archive.run --list
+    rm -rf "${PWD}"
+)
 
 source "${HERE}/bashunit/bashunit.bash"

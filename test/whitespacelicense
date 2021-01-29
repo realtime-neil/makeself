@@ -1,63 +1,74 @@
 #!/bin/bash
 
+set -eu
+
 THIS="$(realpath "$0")"
 HERE="$(dirname "${THIS}")"
 SUT="$(dirname "${HERE}")/makeself.sh"
 
-testWhiteSpaceLicense() {
-    # for each license file: its canonical path is identical to its content
-    local license_dir="$(mktemp -dt license_dir.XXXXXX)"
-    (
-        cd "${license_dir}"
-        cat >"$(printf "_\x09_character_tabulation.txt")" <<EOF
-$(printf "_\x09_character_tabulation.txt")
-EOF
-        cat >"$(printf "_\x0b_line_tabulation.txt")" <<EOF
-$(printf "_\x0b_line_tabulation.txt")
-EOF
-        cat >"$(printf "_\x0c_form_feed.txt")"<<EOF
-$(printf "_\x0c_form_feed.txt")
-EOF
-        cat >"$(printf "_\x0d_carriage_return.txt")"<<EOF
-$(printf "_\x0d_carriage_return.txt")
-EOF
-        cat >"$(printf "_\x20_space.txt")"<<EOF
-$(printf "_\x20_space.txt")
-EOF
-    )
-
-    # The extraction progress diagnostics are buggy on empty archives, so give
-    # it something to extract
-    local archive_dir="$(mktemp -dt archive_dir.XXXXXX)"
-    (
-        cd "${archive_dir}"
-        touch foo bar qux
-    )
-
-    local file_name="$(mktemp -t file_name.XXXXXX)"
-    local label=""
-    local license_text=""
-    find "${license_dir}" -type f | while read license_file; do
-        "${SUT}" \
-            --license "${license_file}" \
-            "${archive_dir}" \
-            "${file_name}" \
-            "Label" \
-            ls -lah
-        assertEqual "$?" 0
-
-        # Assumes the license text is the first line of output
-        license_text="$("${file_name}" --accept --nox11 | head -n1)"
-
-        # This doesn't work for character tabulation...
-        #assertEqual "${license_text}" "${license_file}"
-
-        # ...so do this instead:
-        assertEqual \
-            "$(cat "${license_file}" | md5sum | cut -d' ' -f1)" \
-            "$(echo "${license_text}" | md5sum | cut -d' ' -f1)"
-    done
-    rm -rf "${license_dir}" "${archive_dir}" "${file_name}"
+genLicense() {
+    local string=""
+    string="$(printf '%s' "$*").license.txt"
+    printf '%s' "${string}" >"${string}"
 }
+
+# $1 : string
+doTestWhiteSpaceLicense() (
+    cd "$(mktemp -d)" || assert false
+    printf '\ntesting: %s\n' "$1" >&2
+    printf '%s' "$1" >./"$1"
+    od -v -t x1 -t a ./"$1" >&2
+    cp ./"$1" ./want.license
+    mkdir -p ./archive.d
+    "${SUT}" --license ./"$1" ./archive.d ./archive.run "Archive" ls -lha >/dev/null 2>&1
+    assertEqual "$?" 0
+    # Assumes the license text is the first line of output
+    ./archive.run --nox11 --accept | head -n1 | xargs -I{} printf '%s' "{}" >./have.license
+    assertEqual "$?" 0
+    #./archive.run --info >&2
+    if diff want.license have.license >&2; then
+        rc="$?"
+    else
+        rc="$?"
+    fi
+    rm -rf "${PWD}"
+    assertEqual "${rc}" 0
+)
+
+testWhiteSpaceLicenses() (
+    #doTestWhiteSpaceLicense "$(printf '_\x00_nul')"
+    doTestWhiteSpaceLicense "$(printf '_\x01_soh')"
+    doTestWhiteSpaceLicense "$(printf '_\x02_stx')"
+    doTestWhiteSpaceLicense "$(printf '_\x03_etx')"
+    doTestWhiteSpaceLicense "$(printf '_\x04_eot')"
+    doTestWhiteSpaceLicense "$(printf '_\x05_enq')"
+    doTestWhiteSpaceLicense "$(printf '_\x06_ack')"
+    doTestWhiteSpaceLicense "$(printf '_\x07_bel')"
+    doTestWhiteSpaceLicense "$(printf '_\x08_bs')"
+    doTestWhiteSpaceLicense "$(printf '_\x09_ht')"
+    #doTestWhiteSpaceLicense "$(printf '_\x0a_lf')"
+    doTestWhiteSpaceLicense "$(printf '_\x0b_vt')"
+    doTestWhiteSpaceLicense "$(printf '_\x0c_ff')"
+    doTestWhiteSpaceLicense "$(printf '_\x0d_cr')"
+    doTestWhiteSpaceLicense "$(printf '_\x0e_so')"
+    doTestWhiteSpaceLicense "$(printf '_\x0f_si')"
+    doTestWhiteSpaceLicense "$(printf '_\x10_dle')"
+    doTestWhiteSpaceLicense "$(printf '_\x11_dc1')"
+    doTestWhiteSpaceLicense "$(printf '_\x12_dc2')"
+    doTestWhiteSpaceLicense "$(printf '_\x13_dc3')"
+    doTestWhiteSpaceLicense "$(printf '_\x14_dc4')"
+    doTestWhiteSpaceLicense "$(printf '_\x15_nak')"
+    doTestWhiteSpaceLicense "$(printf '_\x16_syn')"
+    doTestWhiteSpaceLicense "$(printf '_\x17_etb')"
+    doTestWhiteSpaceLicense "$(printf '_\x18_can')"
+    doTestWhiteSpaceLicense "$(printf '_\x19_em')"
+    doTestWhiteSpaceLicense "$(printf '_\x1a_sub')"
+    doTestWhiteSpaceLicense "$(printf '_\x1b_esc')"
+    doTestWhiteSpaceLicense "$(printf '_\x1c_fs')"
+    doTestWhiteSpaceLicense "$(printf '_\x1d_gs')"
+    doTestWhiteSpaceLicense "$(printf '_\x1e_rs')"
+    doTestWhiteSpaceLicense "$(printf '_\x1f_us')"
+    doTestWhiteSpaceLicense "$(printf '_\x20_sp')"
+)
 
 source "${HERE}/bashunit/bashunit.bash"
